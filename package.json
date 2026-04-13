@@ -1,0 +1,13 @@
+{
+  "name": "recipenest",
+  "version": "1.0.0",
+  "description": "RecipeNest - Run frontend and backend together",
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "dev": "concurrently --kill-others-on-fail \"npm run dev --prefix backend\" \"npm start --prefix frontend\"",
+    "start": "concurrently --kill-others-on-fail \"npm start --prefix backend\" \"npm start --prefix frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.1"
+  }
+}
