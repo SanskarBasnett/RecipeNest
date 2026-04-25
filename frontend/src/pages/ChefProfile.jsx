@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import API, { getImageUrl } from '../api/axios';
 import './ChefProfile.css';
 
 const ChefProfile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const backTo = location.state?.from || -1;
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
@@ -25,6 +28,8 @@ const ChefProfile = () => {
   return (
     <div className="chef-profile page">
       <div className="container">
+
+        <button className="back-btn" onClick={() => navigate(backTo)}>← Back</button>
 
         {/* Profile header */}
         <div className="cp-header card">
@@ -56,47 +61,41 @@ const ChefProfile = () => {
                 )}
               </div>
             </div>
-            <div className="cp-header__stat-box">
-              <div className="cp-header__stat">
-                <strong>{recipes.length}</strong>
-                <span>Recipes</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Recipes */}
-        <div className="cp-recipes">
-          <h2 className="section-title">{chef.name.split(' ')[0]}'s Recipes</h2>
-          {recipes.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">🍽️</div>
-              <h3>No recipes yet</h3>
-              <p>This chef hasn't published any recipes yet.</p>
-            </div>
-          ) : (
-            <div className="grid-3">
-              {recipes.map((r) => (
-                <Link to={`/recipes/${r._id}`} key={r._id} className="rcard card">
-                  <div className="rcard__img">
-                    {r.image
-                      ? <img src={getImageUrl(r.image)} alt={r.title} />
-                      : <div className="rcard__placeholder">🍽️</div>
-                    }
-                    <span className={`badge badge-${r.difficulty.toLowerCase()} rcard__badge`}>{r.difficulty}</span>
-                  </div>
-                  <div className="rcard__body">
-                    <div className="rcard__meta">
-                      <span className="badge badge-accent">{r.category}</span>
-                      <span className="rcard__time">⏱ {r.cookingTime} min</span>
+          </div>
+          {/* Recipes */}
+          <div className="cp-recipes">
+            <h2 className="section-title">{chef.name.split(' ')[0]}'s Recipes</h2>
+            {recipes.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">🍽️</div>
+                <h3>No recipes yet</h3>
+                <p>This chef hasn't published any recipes yet.</p>
+              </div>
+            ) : (
+              <div className="grid-3">
+                {recipes.map((r) => (
+                  <Link to={`/recipes/${r._id}`} key={r._id} className="rcard card">
+                    <div className="rcard__img">
+                      {r.image
+                        ? <img src={getImageUrl(r.image)} alt={r.title} />
+                        : <div className="rcard__placeholder">🍽️</div>
+                      }
+                      <span className={`badge badge-${r.difficulty.toLowerCase()} rcard__badge`}>{r.difficulty}</span>
                     </div>
-                    <h3 className="rcard__title">{r.title}</h3>
-                    <p className="rcard__desc">{r.description.substring(0, 80)}...</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+                    <div className="rcard__body">
+                      <div className="rcard__meta">
+                        <span className="badge badge-accent">{r.category}</span>
+                        <span className="rcard__time">⏱ {r.cookingTime} min</span>
+                      </div>
+                      <h3 className="rcard__title">{r.title}</h3>
+                      <p className="rcard__desc">{r.description.substring(0, 80)}...</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
       </div>

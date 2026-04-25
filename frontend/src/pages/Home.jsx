@@ -31,21 +31,6 @@ const Home = () => {
             <Link to="/recipes"  className="btn btn-primary btn-lg">Explore Recipes</Link>
             <Link to="/register" className="btn btn-outline btn-lg">Become a Chef</Link>
           </div>
-          <div className="hero__stats">
-            <div className="hero__stat"><strong>500+</strong><span>Recipes</span></div>
-            <div className="hero__stat-divider" />
-            <div className="hero__stat"><strong>120+</strong><span>Chefs</span></div>
-            <div className="hero__stat-divider" />
-            <div className="hero__stat"><strong>10k+</strong><span>Food Lovers</span></div>
-          </div>
-        </div>
-        <div className="hero__visual">
-          <div className="hero__img-wrap">
-            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80" alt="Delicious food" />
-          </div>
-          <div className="hero__float hero__float--1">🥗 Fresh Salads</div>
-          <div className="hero__float hero__float--2">⭐ Top Rated</div>
-          <div className="hero__float hero__float--3">👨‍🍳 Pro Chefs</div>
         </div>
       </section>
 

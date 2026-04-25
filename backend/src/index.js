@@ -4,6 +4,10 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const seedAdmin      = require('./utils/seedAdmin');
+const seedCategories = require('./utils/seedCategories');
+const seedChefs      = require('./utils/seedChefs');
+const seedRecipes    = require('./utils/seedRecipes');
 
 dotenv.config();
 
@@ -22,10 +26,12 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/chefs', require('./routes/chef.routes'));
-app.use('/api/recipes', require('./routes/recipe.routes'));
-app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/auth',          require('./routes/auth.routes'));
+app.use('/api/chefs',         require('./routes/chef.routes'));
+app.use('/api/recipes',       require('./routes/recipe.routes'));
+app.use('/api/admin',         require('./routes/admin.routes'));
+app.use('/api/categories',    require('./routes/category.routes'));
+app.use('/api/notifications', require('./routes/notification.routes'));
 
 // Health check
 app.get('/', (req, res) => res.json({ message: 'RecipeNest API running' }));
@@ -33,10 +39,25 @@ app.get('/', (req, res) => res.json({ message: 'RecipeNest API running' }));
 // Connect to MongoDB and start server
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log('MongoDB connected');
-    app.listen(process.env.PORT, () =>
+    seedAdmin();
+    seedCategories();
+    await seedChefs();
+    await seedRecipes();
+    const server = app.listen(process.env.PORT, () =>
       console.log(`Server running on port ${process.env.PORT}`)
     );
+
+    // Graceful shutdown on Ctrl+C
+    process.on('SIGINT', () => {
+      console.log('\n👋 Shutting down server...');
+      server.close(() => {
+        mongoose.connection.close(false, () => {
+          console.log('MongoDB connection closed. Bye!');
+          process.exit(0);
+        });
+      });
+    });
   })
   .catch((err) => console.error('MongoDB connection error:', err));

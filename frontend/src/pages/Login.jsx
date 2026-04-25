@@ -20,7 +20,7 @@ const Login = () => {
       const user = await login(form.email, form.password);
       if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'chef') navigate('/dashboard');
-      else navigate('/');
+      else navigate('/my');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {

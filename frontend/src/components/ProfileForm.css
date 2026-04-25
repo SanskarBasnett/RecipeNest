@@ -47,6 +47,23 @@
   border-bottom: 1px solid var(--border);
 }
 
+.profile-form__optional {
+  font-size: 0.72rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: var(--text-light);
+}
+
+.pw-match {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 0.35rem;
+}
+.pw-match--ok  { color: #2e7d32; }
+.pw-match--err { color: #c62828; }
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

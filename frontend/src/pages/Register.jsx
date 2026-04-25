@@ -20,7 +20,7 @@ const Register = () => {
     try {
       const user = await register(form.name, form.email, form.password, form.role);
       if (user.role === 'chef') navigate('/dashboard');
-      else navigate('/');
+      else navigate('/my');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {

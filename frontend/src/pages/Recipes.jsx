@@ -4,12 +4,18 @@ import API, { getImageUrl } from '../api/axios';
 import './Recipes.css';
 
 const Recipes = () => {
-  const [recipes, setRecipes]     = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [sort, setSort]           = useState('newest');
-  const [difficulty, setDifficulty] = useState('');
-  const [category, setCategory]   = useState('');
-  const [search, setSearch]       = useState('');
+  const [recipes, setRecipes]         = useState([]);
+  const [categories, setCategories]   = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [sort, setSort]               = useState('newest');
+  const [difficulty, setDifficulty]   = useState('');
+  const [category, setCategory]       = useState('');
+  const [search, setSearch]           = useState('');
+
+  // Load categories from backend
+  useEffect(() => {
+    API.get('/categories').then(({ data }) => setCategories(data)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -71,8 +77,8 @@ const Recipes = () => {
             </select>
             <select value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">All Categories</option>
-              {['General','Italian','Asian','Mexican','Dessert','Vegan','Breakfast','Seafood'].map((c) => (
-                <option key={c}>{c}</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>

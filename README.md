@@ -23,44 +23,58 @@ A full-stack web application where chefs can share recipes and connect with food
 
 ```
 RecipeNest/
-├── package.json              ← Root: runs both servers with one command
+├── package.json                  ← Root: runs both servers with one command
 │
 ├── backend/
 │   ├── package.json
-│   ├── .env                  ← Environment variables (port, DB, JWT secret)
+│   ├── .env                      ← Environment variables (port, DB, JWT secret)
 │   └── src/
-│       ├── index.js          ← Express app entry point
-│       ├── controllers/      ← Business logic (auth, chef, recipe, admin)
-│       ├── models/           ← Mongoose schemas (User, Recipe)
-│       ├── routes/           ← API route definitions
-│       ├── middleware/       ← JWT auth + Multer file upload
-│       └── uploads/          ← Uploaded images (auto-created)
+│       ├── index.js              ← Express app entry point
+│       ├── controllers/          ← Business logic
+│       │   ├── auth.controller.js
+│       │   ├── chef.controller.js
+│       │   ├── recipe.controller.js
+│       │   ├── category.controller.js
+│       │   ├── notification.controller.js
+│       │   └── admin.controller.js
+│       ├── models/               ← Mongoose schemas
+│       │   ├── User.model.js
+│       │   ├── Recipe.model.js       ← includes likes + comments
+│       │   ├── Category.model.js
+│       │   ├── Notification.model.js
+│       │   └── ActivityLog.model.js
+│       ├── routes/               ← API route definitions
+│       ├── middleware/           ← JWT auth + Multer file upload
+│       ├── utils/                ← Seed scripts, helpers
+│       └── uploads/              ← Uploaded images (auto-created)
 │
 └── frontend/
     ├── package.json
     └── src/
-        ├── index.js          ← React entry point
-        ├── App.jsx           ← Router + protected routes
-        ├── index.css         ← Global styles + CSS variables (light/dark)
+        ├── index.js              ← React entry point
+        ├── App.jsx               ← Router + protected routes
+        ├── index.css             ← Global styles + CSS variables (light/dark)
         ├── api/
-        │   └── axios.js      ← Axios instance + JWT interceptor + getImageUrl()
+        │   └── axios.js          ← Axios instance + JWT interceptor + getImageUrl()
         ├── context/
         │   ├── AuthContext.jsx   ← Global auth state (login, register, logout)
         │   └── ThemeContext.jsx  ← Light/dark mode toggle
         ├── components/
-        │   ├── Navbar.jsx        ← Sticky navbar with dark mode toggle
-        │   ├── RecipeForm.jsx    ← Add/edit recipe form
-        │   └── ProfileForm.jsx   ← Chef profile editor
+        │   ├── Navbar.jsx        ← Sticky navbar with bell notification badge (chefs)
+        │   ├── RecipeForm.jsx    ← Add/edit recipe form with dynamic category combobox
+        │   └── ProfileForm.jsx   ← Profile editor (avatar, bio, social links, password)
         └── pages/
-            ├── Home.jsx          ← Landing page with hero, featured recipes, chefs
-            ├── Login.jsx         ← Login page
-            ├── Register.jsx      ← Register with role selector (User / Chef)
-            ├── Recipes.jsx       ← Recipe listing with search, sort, filter
-            ├── RecipeDetail.jsx  ← Full recipe view with sharing
-            ├── ChefsList.jsx     ← Browse all chefs
-            ├── ChefProfile.jsx   ← Individual chef profile + their recipes
-            ├── Dashboard.jsx     ← Chef dashboard (manage recipes + profile)
-            └── AdminDashboard.jsx← Admin panel (manage users, roles, stats)
+            ├── Home.jsx              ← Landing page with hero, featured recipes, chefs
+            ├── Login.jsx             ← Login page
+            ├── Register.jsx          ← Register with role selector (User / Chef)
+            ├── Recipes.jsx           ← Recipe listing with search, sort, filter
+            ├── RecipeDetail.jsx      ← Full recipe view with likes, comments, sharing
+            ├── ChefsList.jsx         ← Browse all chefs
+            ├── ChefProfile.jsx       ← Individual chef profile + their recipes
+            ├── Dashboard.jsx         ← Chef dashboard (recipes, notifications, profile)
+            ├── UserDashboard.jsx     ← User feed (discover recipes, browse chefs)
+            ├── AdminDashboard.jsx    ← Admin panel (users, recipes, stats)
+            └── UserProfile.jsx       ← Admin view of a user's profile
 ```
 
 ---
@@ -73,17 +87,17 @@ RecipeNest/
 
 ### 1. Install all dependencies
 
-From the root `RecipeNest/` folder, run:
+From the root `RecipeNest/` folder:
 
 ```bash
 npm run install:all
 ```
 
-This installs dependencies for both `backend/` and `frontend/` in one command.
+Installs dependencies for both `backend/` and `frontend/` in one command.
 
 ### 2. Configure environment
 
-The `backend/.env` file is already set up with defaults for local development:
+`backend/.env` is pre-configured for local development:
 
 ```
 PORT=5000
@@ -92,7 +106,7 @@ JWT_SECRET=recipenest_super_secret_key_2024
 NODE_ENV=development
 ```
 
-If using MongoDB Atlas, replace `MONGO_URI` with your Atlas connection string.
+Replace `MONGO_URI` with your Atlas connection string if using MongoDB Atlas.
 
 ### 3. Run the app
 
@@ -100,9 +114,11 @@ If using MongoDB Atlas, replace `MONGO_URI` with your Atlas connection string.
 npm run dev
 ```
 
-This starts both servers simultaneously:
+Starts both servers simultaneously:
 - Backend API → http://localhost:5000
 - Frontend app → http://localhost:3000
+
+On first start the backend automatically seeds the admin account, categories, chefs, and recipes.
 
 ---
 
@@ -118,63 +134,92 @@ This starts both servers simultaneously:
 
 ## User Roles
 
-| Role  | Access                                                        |
-|-------|---------------------------------------------------------------|
-| User  | Browse recipes, view chef profiles                            |
-| Chef  | All user access + dashboard to manage recipes and profile     |
-| Admin | All access + user management, role assignment, platform stats |
+| Role  | Access                                                                    |
+|-------|---------------------------------------------------------------------------|
+| User  | Browse recipes, view chef profiles, like recipes, leave comments          |
+| Chef  | All user access + dashboard to manage recipes, view notifications         |
+| Admin | Full access + user management, view user profiles, platform stats         |
 
 ---
 
 ## API Endpoints
 
 ### Auth — `/api/auth`
-| Method | Endpoint    | Description             | Auth |
-|--------|-------------|-------------------------|------|
-| POST   | /register   | Register user or chef   | No   |
-| POST   | /login      | Login and receive JWT   | No   |
-| GET    | /me         | Get current user info   | Yes  |
+| Method | Endpoint          | Description              | Auth |
+|--------|-------------------|--------------------------|------|
+| POST   | /register         | Register user or chef    | No   |
+| POST   | /login            | Login and receive JWT    | No   |
+| GET    | /me               | Get current user info    | Yes  |
+| PUT    | /change-password  | Change own password      | Yes  |
 
 ### Chefs — `/api/chefs`
-| Method | Endpoint  | Description                        | Auth       |
-|--------|-----------|------------------------------------|------------|
-| GET    | /         | List all chefs                     | No         |
-| GET    | /:id      | Chef profile + their recipes       | No         |
-| PUT    | /profile  | Update own profile                 | Chef/Admin |
-| PUT    | /avatar   | Upload profile picture             | Chef/Admin |
+| Method | Endpoint  | Description                  | Auth       |
+|--------|-----------|------------------------------|------------|
+| GET    | /         | List all chefs               | No         |
+| GET    | /:id      | Chef profile + their recipes | No         |
+| PUT    | /profile  | Update own profile           | Chef/Admin |
+| PUT    | /avatar   | Upload profile picture       | Chef/Admin |
 
 ### Recipes — `/api/recipes`
-| Method | Endpoint    | Description                          | Auth       |
-|--------|-------------|--------------------------------------|------------|
-| GET    | /           | All recipes (sort, filter, search)   | No         |
-| GET    | /:id        | Single recipe detail                 | No         |
-| GET    | /chef/my    | Logged-in chef's own recipes         | Chef       |
-| POST   | /           | Create a new recipe                  | Chef       |
-| PUT    | /:id        | Update a recipe                      | Chef/Admin |
-| DELETE | /:id        | Delete a recipe                      | Chef/Admin |
+| Method | Endpoint                      | Description                        | Auth       |
+|--------|-------------------------------|------------------------------------|------------|
+| GET    | /                             | All recipes (sort, filter)         | No         |
+| GET    | /:id                          | Single recipe detail               | No         |
+| GET    | /chef/my                      | Logged-in chef's own recipes       | Chef       |
+| POST   | /                             | Create a new recipe                | Chef       |
+| PUT    | /:id                          | Update a recipe                    | Chef/Admin |
+| DELETE | /:id                          | Delete a recipe                    | Chef/Admin |
+| POST   | /:id/like                     | Toggle like on a recipe            | Any user   |
+| POST   | /:id/comments                 | Add a comment                      | Any user   |
+| DELETE | /:id/comments/:commentId      | Delete a comment                   | Owner/Admin|
+
+### Categories — `/api/categories`
+| Method | Endpoint   | Description                          | Auth       |
+|--------|------------|--------------------------------------|------------|
+| GET    | /          | List all categories                  | No         |
+| POST   | /          | Add a new category                   | Chef/Admin |
+| DELETE | /:name     | Delete a category                    | Admin      |
+
+### Notifications — `/api/notifications`
+| Method | Endpoint        | Description                          | Auth  |
+|--------|-----------------|--------------------------------------|-------|
+| GET    | /               | Get all notifications for chef       | Chef  |
+| GET    | /unread-count   | Get unread notification count        | Chef  |
+| PUT    | /read-all       | Mark all notifications as read       | Chef  |
+| DELETE | /:id            | Delete a notification                | Chef  |
 
 ### Admin — `/api/admin`
-| Method | Endpoint         | Description              | Auth  |
-|--------|------------------|--------------------------|-------|
-| GET    | /stats           | Platform stats           | Admin |
-| GET    | /users           | List all users           | Admin |
-| DELETE | /users/:id       | Delete user + recipes    | Admin |
-| PUT    | /users/:id/role  | Change user role         | Admin |
+| Method | Endpoint      | Description                  | Auth  |
+|--------|---------------|------------------------------|-------|
+| GET    | /stats        | Platform stats               | Admin |
+| GET    | /activity     | Recent activity log          | Admin |
+| GET    | /users        | List all users               | Admin |
+| GET    | /users/:id    | View a single user's profile | Admin |
+| DELETE | /users/:id    | Delete user + their recipes  | Admin |
+| GET    | /recipes      | List all recipes             | Admin |
+| DELETE | /recipes/:id  | Delete any recipe            | Admin |
 
 ---
 
-## Creating an Admin Account
+## Default Accounts
 
-Register normally through the app, then update the role directly in MongoDB:
+### Admin
+| Field    | Value           |
+|----------|-----------------|
+| Email    | admin@gmail.com |
+| Password | admin@123       |
 
-**Using MongoDB shell:**
-```js
-use recipenest
-db.users.updateOne({ email: "admin@example.com" }, { $set: { role: "admin" } })
-```
+### Seeded Chefs (all use the same password)
 
-**Using MongoDB Compass:**
-Find the user document and change the `role` field from `"user"` to `"admin"`.
+| Name             | Email              | Specialty               |
+|------------------|--------------------|-------------------------|
+| Marco Rossi      | marco@gmail.com    | Italian Cuisine         |
+| Aisha Patel      | aisha@gmail.com    | Indian & Fusion         |
+| Jean-Luc Moreau  | jeanluc@gmail.com  | French Pastry           |
+| Sofia Hernandez  | sofia@gmail.com    | Mexican & Latin American|
+| Kenji Tanaka     | kenji@gmail.com    | Japanese & Asian Fusion |
+
+**Chef password:** `chef@123`
 
 ---
 
@@ -183,10 +228,16 @@ Find the user document and change the `role` field from `"user"` to `"admin"`.
 - JWT authentication with role-based access control (User / Chef / Admin)
 - Light and dark mode toggle (persisted in localStorage)
 - Chef profiles with avatar, bio, specialty, location, and social links
-- Recipe CRUD with image upload, ingredients, instructions, difficulty, category
-- Recipe listing with sort (newest, oldest, A-Z, difficulty) and filter (difficulty, category)
+- Recipe CRUD with image upload, ingredients, step-by-step instructions, difficulty, and category
+- Dynamic category combobox — pick existing or type a new one to create it on the fly
+- Likes and comments on recipes — any logged-in user can like or comment
+- Chef notifications — real-time bell badge in the navbar, dedicated notifications tab in the dashboard
+- Notifications created when someone likes or comments on a chef's recipe (not self-triggered)
+- Back button on chef profile and recipe detail pages — returns to the correct dashboard tab
+- Tab state stored in the URL for all dashboards — survives navigation and browser back
+- Admin can view individual user profiles
+- Recipe listing with sort (newest, oldest, A–Z, difficulty) and filter by difficulty/category
 - Read More toggle on recipe cards
 - Social media sharing (Web Share API + Twitter/Facebook links)
 - Fully responsive design for mobile, tablet, and desktop
-- Admin dashboard with user management, role assignment, and platform stats
-- Auto-created uploads directory on backend startup
+- Auto-seeded admin, categories, chefs, and recipes on first backend start

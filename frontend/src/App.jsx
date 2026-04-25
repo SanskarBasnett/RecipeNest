@@ -12,7 +12,9 @@ import ChefProfile from './pages/ChefProfile';
 import Recipes from './pages/Recipes';
 import RecipeDetail from './pages/RecipeDetail';
 import Dashboard from './pages/Dashboard';
+import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import UserProfile from './pages/UserProfile';
 
 const ProtectedRoute = ({ children, roles }) => {
   const { user } = useAuth();
@@ -26,7 +28,7 @@ const GuestRoute = ({ children }) => {
   if (user) {
     if (user.role === 'admin') return <Navigate to="/admin" replace />;
     if (user.role === 'chef')  return <Navigate to="/dashboard" replace />;
-    return <Navigate to="/" replace />;
+    return <Navigate to="/my" replace />;
   }
   return children;
 };
@@ -43,7 +45,9 @@ const AppRoutes = () => (
       <Route path="/recipes"   element={<Recipes />} />
       <Route path="/recipes/:id" element={<RecipeDetail />} />
       <Route path="/dashboard" element={<ProtectedRoute roles={['chef']}><Dashboard /></ProtectedRoute>} />
+      <Route path="/my"        element={<ProtectedRoute roles={['user']}><UserDashboard /></ProtectedRoute>} />
       <Route path="/admin"     element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/users/:id" element={<ProtectedRoute roles={['admin']}><UserProfile /></ProtectedRoute>} />
       <Route path="*"          element={<Navigate to="/" replace />} />
     </Routes>
   </>

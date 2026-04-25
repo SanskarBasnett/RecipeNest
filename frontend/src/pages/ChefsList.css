@@ -31,7 +31,7 @@
 
 .chef-card__cover {
   height: 80px;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: linear-gradient(135deg, var(--accent), var(--primary));
 }
 
 .chef-card__body {

@@ -4,9 +4,9 @@
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background: linear-gradient(135deg, #fff8f3 0%, var(--bg) 100%);
+  background: linear-gradient(135deg, #fff8f0 0%, var(--bg) 100%);
 }
-.dark .auth-page { background: linear-gradient(135deg, #1a2535 0%, var(--bg) 100%); }
+.dark .auth-page { background: linear-gradient(135deg, #2a1800 0%, var(--bg) 100%); }
 
 .auth-card {
   background: var(--bg-card);
@@ -64,7 +64,7 @@
 .role-option:hover { border-color: var(--primary); }
 .role-option.selected {
   border-color: var(--primary);
-  background: rgba(230,57,57,0.06);
+  background: rgba(242,140,0,0.08);
 }
 .role-option__icon { font-size: 1.8rem; margin-bottom: 0.3rem; }
 .role-option__label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
