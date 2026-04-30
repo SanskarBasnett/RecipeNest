@@ -8,14 +8,14 @@ A full-stack web application where chefs can share recipes and connect with food
 
 ## Tech Stack
 
-| Layer     | Technology                                      |
-|-----------|-------------------------------------------------|
-| Frontend  | React 18, React Router v6, Axios, Plain CSS     |
-| Backend   | Node.js, Express.js                             |
-| Database  | MongoDB + Mongoose ODM                          |
-| Auth      | JWT (JSON Web Tokens) + bcryptjs                |
-| Uploads   | Multer (image handling)                         |
-| Dev Tools | Concurrently, Nodemon                           |
+| Layer     | Technology                                     |
+|-----------|------------------------------------------------|
+| Frontend  | React 18, React Router v6, Axios, Tailwind CSS |
+| Backend   | Node.js, Express.js                            |
+| Database  | MongoDB + Mongoose ODM                         |
+| Auth      | JWT (JSON Web Tokens) + bcryptjs               |
+| Uploads   | Multer (image handling)                        |
+| Dev Tools | Concurrently, Nodemon                          |
 
 ---
 
@@ -39,13 +39,25 @@ RecipeNest/
 │       │   └── admin.controller.js
 │       ├── models/               ← Mongoose schemas
 │       │   ├── User.model.js
-│       │   ├── Recipe.model.js       ← includes likes + comments
+│       │   ├── Recipe.model.js       ← includes likes + embedded comments
 │       │   ├── Category.model.js
-│       │   ├── Notification.model.js
-│       │   └── ActivityLog.model.js
+│       │   └── Notification.model.js
 │       ├── routes/               ← API route definitions
-│       ├── middleware/           ← JWT auth + Multer file upload
-│       ├── utils/                ← Seed scripts, helpers
+│       │   ├── auth.routes.js
+│       │   ├── chef.routes.js
+│       │   ├── recipe.routes.js
+│       │   ├── category.routes.js
+│       │   ├── notification.routes.js
+│       │   └── admin.routes.js
+│       ├── middleware/
+│       │   ├── auth.middleware.js    ← JWT protect + role authorize
+│       │   └── upload.middleware.js  ← Multer image upload config
+│       ├── utils/
+│       │   ├── seedAdmin.js
+│       │   ├── seedCategories.js
+│       │   ├── seedChefs.js
+│       │   ├── seedRecipes.js
+│       │   └── downloadImage.js
 │       └── uploads/              ← Uploaded images (auto-created)
 │
 └── frontend/
@@ -53,28 +65,28 @@ RecipeNest/
     └── src/
         ├── index.js              ← React entry point
         ├── App.jsx               ← Router + protected routes
-        ├── index.css             ← Global styles + CSS variables (light/dark)
+        ├── index.css             ← Tailwind directives + CSS variables (light/dark)
         ├── api/
         │   └── axios.js          ← Axios instance + JWT interceptor + getImageUrl()
         ├── context/
-        │   ├── AuthContext.jsx   ← Global auth state (login, register, logout)
-        │   └── ThemeContext.jsx  ← Light/dark mode toggle
+        │   ├── AuthContext.jsx   ← Global auth state (sessionStorage-based)
+        │   └── ThemeContext.jsx  ← Light/dark mode toggle (localStorage-based)
         ├── components/
-        │   ├── Navbar.jsx        ← Sticky navbar with bell notification badge (chefs)
-        │   ├── RecipeForm.jsx    ← Add/edit recipe form with dynamic category combobox
+        │   ├── Navbar.jsx        ← Sticky navbar with bell notification badge
+        │   ├── RecipeForm.jsx    ← Add/edit recipe form with category combobox
         │   └── ProfileForm.jsx   ← Profile editor (avatar, bio, social links, password)
         └── pages/
-            ├── Home.jsx              ← Landing page with hero, featured recipes, chefs
-            ├── Login.jsx             ← Login page
+            ├── Home.jsx              ← Landing page: hero, featured recipes, chefs, CTA
+            ├── Login.jsx             ← Login form
             ├── Register.jsx          ← Register with role selector (User / Chef)
             ├── Recipes.jsx           ← Recipe listing with search, sort, filter
-            ├── RecipeDetail.jsx      ← Full recipe view with likes, comments, sharing
-            ├── ChefsList.jsx         ← Browse all chefs
-            ├── ChefProfile.jsx       ← Individual chef profile + their recipes
-            ├── Dashboard.jsx         ← Chef dashboard (recipes, notifications, profile)
-            ├── UserDashboard.jsx     ← User feed (discover recipes, browse chefs)
-            ├── AdminDashboard.jsx    ← Admin panel (users, recipes, stats)
-            └── UserProfile.jsx       ← Admin view of a user's profile
+            ├── RecipeDetail.jsx      ← Full recipe: ingredients, steps, likes, comments, sharing
+            ├── ChefsList.jsx         ← Browse all chefs with search
+            ├── ChefProfile.jsx       ← Chef profile + best recipe spotlight + recipes grid
+            ├── Dashboard.jsx         ← Chef: Add Recipe, My Recipes, Explore, Notifications, Profile
+            ├── UserDashboard.jsx     ← User: Discover Recipes (favourites toggle), Browse Chefs, Profile
+            ├── AdminDashboard.jsx    ← Admin: Stats, Chefs, Food Lovers, Recipes, Profile
+            └── UserProfile.jsx       ← Admin view of a user's profile + liked recipes
 ```
 
 ---
@@ -134,70 +146,71 @@ On first start the backend automatically seeds the admin account, categories, ch
 
 ## User Roles
 
-| Role  | Access                                                                    |
-|-------|---------------------------------------------------------------------------|
-| User  | Browse recipes, view chef profiles, like recipes, leave comments          |
-| Chef  | All user access + dashboard to manage recipes, view notifications         |
-| Admin | Full access + user management, view user profiles, platform stats         |
+| Role  | Access                                                                          |
+|-------|---------------------------------------------------------------------------------|
+| User  | Browse recipes, view chef profiles, like recipes, leave comments, favourites    |
+| Chef  | All user access + dashboard to manage recipes, explore others, notifications    |
+| Admin | Full access + user management, view user profiles, platform stats               |
 
 ---
 
 ## API Endpoints
 
 ### Auth — `/api/auth`
-| Method | Endpoint          | Description              | Auth |
-|--------|-------------------|--------------------------|------|
-| POST   | /register         | Register user or chef    | No   |
-| POST   | /login            | Login and receive JWT    | No   |
-| GET    | /me               | Get current user info    | Yes  |
-| PUT    | /change-password  | Change own password      | Yes  |
+| Method | Endpoint          | Description           | Auth |
+|--------|-------------------|-----------------------|------|
+| POST   | /register         | Register user or chef | No   |
+| POST   | /login            | Login and receive JWT | No   |
+| GET    | /me               | Get current user info | Yes  |
+| PUT    | /change-password  | Change own password   | Yes  |
 
 ### Chefs — `/api/chefs`
-| Method | Endpoint  | Description                  | Auth       |
-|--------|-----------|------------------------------|------------|
-| GET    | /         | List all chefs               | No         |
-| GET    | /:id      | Chef profile + their recipes | No         |
-| PUT    | /profile  | Update own profile           | Chef/Admin |
-| PUT    | /avatar   | Upload profile picture       | Chef/Admin |
+| Method | Endpoint  | Description                  | Auth  |
+|--------|-----------|------------------------------|-------|
+| GET    | /         | List all chefs               | No    |
+| GET    | /:id      | Chef profile + their recipes | No    |
+| PUT    | /profile  | Update own profile           | Chef  |
+| PUT    | /avatar   | Upload profile picture       | Chef  |
 
 ### Recipes — `/api/recipes`
-| Method | Endpoint                      | Description                        | Auth       |
-|--------|-------------------------------|------------------------------------|------------|
-| GET    | /                             | All recipes (sort, filter)         | No         |
-| GET    | /:id                          | Single recipe detail               | No         |
-| GET    | /chef/my                      | Logged-in chef's own recipes       | Chef       |
-| POST   | /                             | Create a new recipe                | Chef       |
-| PUT    | /:id                          | Update a recipe                    | Chef/Admin |
-| DELETE | /:id                          | Delete a recipe                    | Chef/Admin |
-| POST   | /:id/like                     | Toggle like on a recipe            | Any user   |
-| POST   | /:id/comments                 | Add a comment                      | Any user   |
-| DELETE | /:id/comments/:commentId      | Delete a comment                   | Owner/Admin|
+| Method | Endpoint                 | Description                     | Auth       |
+|--------|--------------------------|---------------------------------|------------|
+| GET    | /                        | All recipes (sort, filter)      | No         |
+| GET    | /:id                     | Single recipe detail            | No         |
+| GET    | /chef/my                 | Logged-in chef's own recipes    | Chef       |
+| GET    | /liked                   | Recipes liked by current user   | Any user   |
+| POST   | /                        | Create a new recipe             | Chef       |
+| PUT    | /:id                     | Update a recipe                 | Chef/Admin |
+| DELETE | /:id                     | Delete a recipe                 | Chef/Admin |
+| POST   | /:id/like                | Toggle like on a recipe         | Any user   |
+| POST   | /:id/comments            | Add a comment                   | Any user   |
+| DELETE | /:id/comments/:commentId | Delete a comment                | Owner/Admin|
 
 ### Categories — `/api/categories`
-| Method | Endpoint   | Description                          | Auth       |
-|--------|------------|--------------------------------------|------------|
-| GET    | /          | List all categories                  | No         |
-| POST   | /          | Add a new category                   | Chef/Admin |
-| DELETE | /:name     | Delete a category                    | Admin      |
+| Method | Endpoint  | Description          | Auth       |
+|--------|-----------|----------------------|------------|
+| GET    | /         | List all categories  | No         |
+| POST   | /         | Add a new category   | Chef/Admin |
+| DELETE | /:name    | Delete a category    | Admin      |
 
 ### Notifications — `/api/notifications`
-| Method | Endpoint        | Description                          | Auth  |
-|--------|-----------------|--------------------------------------|-------|
-| GET    | /               | Get all notifications for chef       | Chef  |
-| GET    | /unread-count   | Get unread notification count        | Chef  |
-| PUT    | /read-all       | Mark all notifications as read       | Chef  |
-| DELETE | /:id            | Delete a notification                | Chef  |
+| Method | Endpoint       | Description                    | Auth |
+|--------|----------------|--------------------------------|------|
+| GET    | /              | Get all notifications          | Chef |
+| GET    | /unread-count  | Get unread notification count  | Chef |
+| PUT    | /read-all      | Mark all notifications as read | Chef |
+| DELETE | /:id           | Delete a notification          | Chef |
 
 ### Admin — `/api/admin`
-| Method | Endpoint      | Description                  | Auth  |
-|--------|---------------|------------------------------|-------|
-| GET    | /stats        | Platform stats               | Admin |
-| GET    | /activity     | Recent activity log          | Admin |
-| GET    | /users        | List all users               | Admin |
-| GET    | /users/:id    | View a single user's profile | Admin |
-| DELETE | /users/:id    | Delete user + their recipes  | Admin |
-| GET    | /recipes      | List all recipes             | Admin |
-| DELETE | /recipes/:id  | Delete any recipe            | Admin |
+| Method | Endpoint      | Description                       | Auth  |
+|--------|---------------|-----------------------------------|-------|
+| GET    | /stats        | Platform stats                    | Admin |
+| GET    | /users        | List all users                    | Admin |
+| GET    | /users/:id    | View user profile + liked recipes | Admin |
+| DELETE | /users/:id    | Delete user + their recipes       | Admin |
+| PUT    | /users/:id/role | Change a user's role            | Admin |
+| GET    | /recipes      | List all recipes                  | Admin |
+| DELETE | /recipes/:id  | Delete any recipe                 | Admin |
 
 ---
 
@@ -211,13 +224,13 @@ On first start the backend automatically seeds the admin account, categories, ch
 
 ### Seeded Chefs (all use the same password)
 
-| Name             | Email              | Specialty               |
-|------------------|--------------------|-------------------------|
-| Marco Rossi      | marco@gmail.com    | Italian Cuisine         |
-| Aisha Patel      | aisha@gmail.com    | Indian & Fusion         |
-| Jean-Luc Moreau  | jeanluc@gmail.com  | French Pastry           |
-| Sofia Hernandez  | sofia@gmail.com    | Mexican & Latin American|
-| Kenji Tanaka     | kenji@gmail.com    | Japanese & Asian Fusion |
+| Name            | Email             | Specialty                |
+|-----------------|-------------------|--------------------------|
+| Marco Rossi     | marco@gmail.com   | Italian Cuisine          |
+| Aisha Patel     | aisha@gmail.com   | Indian & Fusion          |
+| Jean-Luc Moreau | jeanluc@gmail.com | French Pastry            |
+| Sofia Hernandez | sofia@gmail.com   | Mexican & Latin American |
+| Kenji Tanaka    | kenji@gmail.com   | Japanese & Asian Fusion  |
 
 **Chef password:** `chef@123`
 
@@ -226,16 +239,21 @@ On first start the backend automatically seeds the admin account, categories, ch
 ## Features
 
 - JWT authentication with role-based access control (User / Chef / Admin)
-- Light and dark mode toggle (persisted in localStorage)
+- Session-based auth — session clears automatically when the browser is closed
+- Light and dark mode toggle (preference persisted in localStorage)
 - Chef profiles with avatar, bio, specialty, location, and social links
 - Recipe CRUD with image upload, ingredients, step-by-step instructions, difficulty, and category
 - Dynamic category combobox — pick existing or type a new one to create it on the fly
 - Likes and comments on recipes — any logged-in user can like or comment
-- Chef notifications — real-time bell badge in the navbar, dedicated notifications tab in the dashboard
+- Favourites toggle — users can filter the recipe feed to show only liked recipes
+- Chef best recipe spotlight — the most-liked recipe is highlighted on a chef's profile
+- Liked recipes shown on user profiles (visible to admin)
+- Chef Explore tab — chefs can browse other chefs' recipes from their dashboard
+- Edit recipe inline — edit form opens within My Recipes tab with a back button
+- Chef notifications — real-time bell badge in the navbar, dedicated notifications tab
 - Notifications created when someone likes or comments on a chef's recipe (not self-triggered)
-- Back button on chef profile and recipe detail pages — returns to the correct dashboard tab
 - Tab state stored in the URL for all dashboards — survives navigation and browser back
-- Admin can view individual user profiles
+- Admin can view individual user profiles including their liked recipes
 - Recipe listing with sort (newest, oldest, A–Z, difficulty) and filter by difficulty/category
 - Read More toggle on recipe cards
 - Social media sharing (Web Share API + Twitter/Facebook links)

@@ -38,7 +38,7 @@ const downloadImage = (url, filename, redirects = 0) => {
 
       if (response.statusCode !== 200) {
         response.resume();
-        console.warn(`⚠️  Image download failed (${response.statusCode}): ${url}`);
+        console.warn(`[WARN] Image download failed (${response.statusCode}): ${url}`);
         resolve(null);
         return;
       }
@@ -49,19 +49,19 @@ const downloadImage = (url, filename, redirects = 0) => {
       file.on('finish', () => { file.close(); resolve(`/uploads/${filename}`); });
       file.on('error', (err) => {
         fs.unlink(dest, () => {});
-        console.warn(`⚠️  Write error: ${err.message}`);
+        console.warn(`[WARN] Write error: ${err.message}`);
         resolve(null);
       });
     });
 
     request.on('error', (err) => {
-      console.warn(`⚠️  Image download error: ${err.message}`);
+      console.warn(`[WARN] Image download error: ${err.message}`);
       resolve(null);
     });
 
     request.setTimeout(20000, () => {
       request.destroy();
-      console.warn(`⚠️  Image download timed out: ${url}`);
+      console.warn(`[WARN] Image download timed out: ${url}`);
       resolve(null);
     });
   });

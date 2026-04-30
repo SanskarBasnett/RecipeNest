@@ -137,16 +137,6 @@ const RECIPES_BY_CHEF_EMAIL = {
       imageFile: 'recipe-ramen.jpg',
     },
     {
-      title:        'Salmon Sushi Rolls (Maki)',
-      description:  'Fresh salmon and creamy avocado wrapped in seasoned sushi rice and nori. A beginner-friendly maki roll that looks impressive and tastes incredible.',
-      ingredients:  ['300g sushi rice', '3 tbsp rice vinegar', '1 tbsp sugar', '1 tsp salt', '200g sashimi-grade salmon, sliced', '1 avocado, sliced', '4 nori sheets', 'Soy sauce to serve', 'Pickled ginger to serve', 'Wasabi to serve'],
-      instructions: '1. Cook sushi rice. Mix vinegar, sugar, and salt; fold into warm rice. Cool to room temperature.\n2. Place nori on a bamboo mat, shiny side down. Spread rice evenly, leaving 2cm at the top.\n3. Lay salmon and avocado in a line across the centre.\n4. Roll tightly using the mat, pressing firmly. Seal the edge with a little water.\n5. Slice into 6–8 pieces with a wet knife.\n6. Serve with soy sauce, pickled ginger, and wasabi.',
-      category: 'Lunch', difficulty: 'Medium', cookingTime: 45, prepTime: 30, cookTime: 15, servings: 4,
-      tags: ['japanese', 'sushi', 'seafood', 'rice'],
-      imageUrl:  'https://picsum.photos/seed/sushiroll/600/400',
-      imageFile: 'recipe-sushi.jpg',
-    },
-    {
       title:        'Matcha Pancakes',
       description:  'Fluffy Japanese-style soufflé pancakes infused with earthy matcha powder, served with whipped cream and a drizzle of honey.',
       ingredients:  ['2 eggs, separated', '3 tbsp milk', '½ tsp vanilla extract', '4 tbsp plain flour', '1 tbsp matcha powder', '½ tsp baking powder', '3 tbsp caster sugar', 'Butter for cooking', 'Whipped cream and honey to serve'],
@@ -164,7 +154,7 @@ const seedRecipes = async () => {
     for (const [email, recipes] of Object.entries(RECIPES_BY_CHEF_EMAIL)) {
       const chef = await User.findOne({ email });
       if (!chef) {
-        console.warn(`⚠️  Chef not found for email ${email}, skipping recipes.`);
+        console.warn(`[WARN] Chef not found for email ${email}, skipping recipes.`);
         continue;
       }
 
@@ -173,19 +163,19 @@ const seedRecipes = async () => {
         if (!exists) {
           const imagePath = await downloadImage(imageUrl, imageFile);
           await Recipe.create({ ...recipeData, chef: chef._id, image: imagePath || '' });
-          console.log(`✅ Recipe seeded: "${recipeData.title}"${imagePath ? ' (with image)' : ''}`);
+          console.log(`[OK] Recipe seeded: "${recipeData.title}"${imagePath ? ' (with image)' : ''}`);
         } else if (!exists.image) {
           // Recipe exists but has no image — download and patch
           const imagePath = await downloadImage(imageUrl, imageFile);
           if (imagePath) {
             await Recipe.updateOne({ _id: exists._id }, { image: imagePath });
-            console.log(`🖼️  Image added for existing recipe: "${recipeData.title}"`);
+            console.log(`[IMG] Image added for existing recipe: "${recipeData.title}"`);
           }
         }
       }
     }
   } catch (err) {
-    console.error('❌ Recipe seed error:', err.message);
+    console.error('[ERROR] Recipe seed error:', err.message);
   }
 };
 

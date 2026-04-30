@@ -17,9 +17,9 @@ const seedAdmin = async () => {
       role:     'admin',
     });
 
-    console.log('✅ Default admin created — email: admin@gmail.com | password: admin@123');
+    console.log('[OK] Default admin created — email: admin@gmail.com | password: admin@123');
   } catch (err) {
-    console.error('❌ Failed to seed admin:', err.message);
+    console.error('[ERROR] Failed to seed admin:', err.message);
   }
 };
 

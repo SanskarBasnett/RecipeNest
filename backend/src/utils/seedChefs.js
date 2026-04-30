@@ -71,18 +71,18 @@ const seedChefs = async () => {
       if (!exists) {
         const avatarPath = await downloadImage(avatarUrl, avatarFile);
         await User.create({ ...chefData, avatar: avatarPath || '' });
-        console.log(`✅ Chef seeded: ${chefData.name}${avatarPath ? ' (with avatar)' : ''}`);
+        console.log(`[OK] Chef seeded: ${chefData.name}${avatarPath ? ' (with avatar)' : ''}`);
       } else if (!exists.avatar) {
         // Chef exists but has no avatar — download and patch
         const avatarPath = await downloadImage(avatarUrl, avatarFile);
         if (avatarPath) {
           await User.updateOne({ _id: exists._id }, { avatar: avatarPath });
-          console.log(`🖼️  Avatar added for existing chef: ${chefData.name}`);
+          console.log(`[IMG] Avatar added for existing chef: ${chefData.name}`);
         }
       }
     }
   } catch (err) {
-    console.error('❌ Chef seed error:', err.message);
+    console.error('[ERROR] Chef seed error:', err.message);
   }
 };
 

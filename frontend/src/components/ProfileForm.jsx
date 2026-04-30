@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API, { getImageUrl } from '../api/axios';
-import './ProfileForm.css';
 
 const ProfileForm = ({
   showSpecialty   = true,
@@ -11,20 +10,14 @@ const ProfileForm = ({
 }) => {
   const { user, updateUser } = useAuth();
 
-  // Derive role context from visible fields
   const isChef  = showSpecialty;
   const isAdmin = !showBio && !showSpecialty;
 
-  // Role-appropriate placeholders
   const ph = {
-    name:     isChef  ? 'e.g. Marco Rossi'
-            : isAdmin ? 'e.g. Admin Name'
-            :           'e.g. John Smith',
-    bio:      isChef  ? 'Tell food lovers about your cooking style and experience...'
-            :           'Tell the community a little about yourself...',
+    name:     isChef  ? 'e.g. Marco Rossi' : isAdmin ? 'e.g. Admin Name' : 'e.g. John Smith',
+    bio:      isChef  ? 'Tell food lovers about your cooking style and experience...' : 'Tell the community a little about yourself...',
     specialty:'e.g. Italian Cuisine, Pastry, BBQ...',
-    location: isChef  ? 'e.g. Rome, Italy'
-            :           'e.g. London, UK',
+    location: isChef  ? 'e.g. Rome, Italy' : 'e.g. London, UK',
     current:  'Enter your current password',
     newPass:  'At least 6 characters',
     confirm:  'Repeat new password',
@@ -58,19 +51,17 @@ const ProfileForm = ({
     setPreview(URL.createObjectURL(file));
   };
 
-  // Password match indicator
   const matchStatus = () => {
     if (!form.confirm) return null;
     if (form.newPass === form.confirm)
-      return <span className="pw-match pw-match--ok">✓ Passwords match</span>;
-    return <span className="pw-match pw-match--err">✗ Passwords don't match</span>;
+      return <span className="block text-xs font-semibold mt-1.5 text-green-700">✓ Passwords match</span>;
+    return <span className="block text-xs font-semibold mt-1.5 text-red-600">✗ Passwords don't match</span>;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setSuccess('');
 
-    // Validate password fields only if the user typed something
     if (form.newPass || form.confirm || form.current) {
       if (!form.current) { setError('Enter your current password to change it.'); return; }
       if (form.newPass.length < 6) { setError('New password must be at least 6 characters.'); return; }
@@ -79,7 +70,6 @@ const ProfileForm = ({
 
     setLoading(true);
     try {
-      // 1. Update profile info
       const payload = {
         name: form.name,
         ...(showBio         && { bio: form.bio }),
@@ -96,7 +86,6 @@ const ProfileForm = ({
       const { data } = await API.put('/chefs/profile', payload);
       updateUser(data);
 
-      // 2. Upload avatar if a new file was selected
       if (avatar) {
         const fd = new FormData();
         fd.append('avatar', avatar);
@@ -105,7 +94,6 @@ const ProfileForm = ({
         setAvatar(null);
       }
 
-      // 3. Change password if fields were filled
       if (form.newPass) {
         await API.put('/auth/change-password', {
           currentPassword: form.current,
@@ -125,36 +113,47 @@ const ProfileForm = ({
   const currentAvatar = preview || (user.avatar ? getImageUrl(user.avatar) : null);
 
   return (
-    <div className="profile-form card">
-      <div className="profile-form__header">
-        <h2>Edit Profile</h2>
-      </div>
+    <div className="card p-8 max-w-[700px]">
+      <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--text)' }}>Edit Profile</h2>
 
       {success && <div className="alert alert-success">{success}</div>}
       {error   && <div className="alert alert-error">{error}</div>}
 
-      {/* Avatar */}
-      <div className="profile-form__avatar-row">
-        <div className="profile-form__avatar">
+      {/* Avatar row */}
+      <div
+        className="flex items-center gap-6 mb-6 p-5 rounded-xl"
+        style={{ background: 'var(--bg)' }}
+      >
+        <div
+          className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0"
+          style={{ border: '3px solid var(--primary)' }}
+        >
           {currentAvatar
-            ? <img src={currentAvatar} alt="avatar" />
-            : <div className="profile-form__avatar-placeholder">{user.name.charAt(0)}</div>
+            ? <img src={currentAvatar} alt="avatar" className="w-full h-full object-cover" />
+            : (
+              <div
+                className="w-full h-full flex items-center justify-center text-3xl font-bold text-white"
+                style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}
+              >
+                {user.name.charAt(0)}
+              </div>
+            )
           }
         </div>
-        <div className="profile-form__avatar-info">
-          <h4>Profile Picture</h4>
-          <p>JPG, PNG or WebP. Max 5MB.</p>
+        <div>
+          <h4 className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>Profile Picture</h4>
+          <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>JPG, PNG or WebP. Max 5MB.</p>
           <input
             type="file"
             accept="image/*"
             onChange={handleAvatarChange}
-            style={{ marginTop: '0.5rem', fontSize: '0.82rem' }}
+            className="text-xs"
           />
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* ── Profile fields ── */}
+        {/* Name + Specialty */}
         <div className={showSpecialty ? 'form-row' : ''}>
           <div className="form-group">
             <label>Full Name</label>
@@ -178,52 +177,50 @@ const ProfileForm = ({
         {showBio && (
           <div className="form-group">
             <label>Bio</label>
-            <textarea name="bio" value={form.bio} onChange={handleChange} rows={4}
-              placeholder={ph.bio} />
+            <textarea name="bio" value={form.bio} onChange={handleChange} rows={4} placeholder={ph.bio} />
           </div>
         )}
 
         {showSocialLinks && (
           <>
-            <p className="profile-form__section-title">Social Links</p>
+            <p
+              className="text-xs uppercase tracking-widest font-semibold mt-6 mb-4 pb-2 border-b"
+              style={{ color: 'var(--text-muted)', borderColor: 'var(--border)', fontFamily: 'Inter, sans-serif' }}
+            >
+              Social Links
+            </p>
             <div className="form-group">
-              <label>📸 Instagram URL</label>
-              <input name="instagram" value={form.instagram} onChange={handleChange}
-                placeholder="https://instagram.com/yourhandle" />
+              <label>Instagram URL</label>
+              <input name="instagram" value={form.instagram} onChange={handleChange} placeholder="https://instagram.com/yourhandle" />
             </div>
             <div className="form-group">
-              <label>🐦 Twitter URL</label>
-              <input name="twitter" value={form.twitter} onChange={handleChange}
-                placeholder="https://twitter.com/yourhandle" />
+              <label>Twitter URL</label>
+              <input name="twitter" value={form.twitter} onChange={handleChange} placeholder="https://twitter.com/yourhandle" />
             </div>
             <div className="form-group">
-              <label>▶️ YouTube URL</label>
-              <input name="youtube" value={form.youtube} onChange={handleChange}
-                placeholder="https://youtube.com/yourchannel" />
+              <label>YouTube URL</label>
+              <input name="youtube" value={form.youtube} onChange={handleChange} placeholder="https://youtube.com/yourchannel" />
             </div>
           </>
         )}
 
-        {/* ── Password section ── */}
+        {/* Password section */}
+        <p
+          className="text-xs uppercase tracking-widest font-semibold mt-6 mb-4 pb-2 border-b"
+          style={{ color: 'var(--text-muted)', borderColor: 'var(--border)', fontFamily: 'Inter, sans-serif' }}
+        >
+          Change Password
+        </p>
         <div className="form-row">
           <div className="form-group">
             <label>Current Password</label>
-            <input
-              type="password"
-              name="current"
-              placeholder={ph.current}
-              value={form.current}
-              onChange={handleChange}
-            />
+            <input type="password" name="current" placeholder={ph.current} value={form.current} onChange={handleChange} />
           </div>
           <div className="form-group">
             <label>New Password</label>
             <input
-              type="password"
-              name="newPass"
-              placeholder={ph.newPass}
-              value={form.newPass}
-              onChange={handleChange}
+              type="password" name="newPass" placeholder={ph.newPass}
+              value={form.newPass} onChange={handleChange}
               minLength={form.newPass ? 6 : undefined}
             />
           </div>
@@ -231,13 +228,7 @@ const ProfileForm = ({
 
         <div className="form-group">
           <label>Confirm New Password</label>
-          <input
-            type="password"
-            name="confirm"
-            placeholder={ph.confirm}
-            value={form.confirm}
-            onChange={handleChange}
-          />
+          <input type="password" name="confirm" placeholder={ph.confirm} value={form.confirm} onChange={handleChange} />
           {matchStatus()}
         </div>
 
